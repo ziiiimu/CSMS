@@ -1,0 +1,346 @@
+@startuml
+!theme plain
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam wrapWidth 200
+hide empty members
+hide fields
+hide methods
+title CSMS - Products
+
+enum ProductCategory {
+  BEVERAGES
+  SNACKS
+  DAIRY
+  BAKERY
+  HOUSEHOLD
+  ELECTRONICS
+  HEALTH_BEAUTY
+  OTHER
+}
+
+abstract class Product {
+  - productId: string
+  - name: string
+  - description: string
+  - basePrice: double
+  - currentStock: int
+  - minStockLevel: int
+  - maxStockLevel: int
+  - category: ProductCategory
+  - supplier: string
+  - barcode: string
+  - costPrice: double
+  - isActive: bool
+  - tags: vector<string>
+  + Product(id: string, name: string, desc: string, price: double, cost: double, stock: int, cat: ProductCategory, supplier: string, minStock: int, maxStock: int)
+  + calculateSellingPrice(): double
+  + getProductType(): string
+  + displayDetailedInfo(): void
+  + getId(): string
+  + getName(): string
+  + getBasePrice(): double
+  + getCostPrice(): double
+  + getCurrentStock(): int
+  + reduceStock(quantity: int): bool
+  + addStock(quantity: int): void
+  + isLowStock(): bool
+  + getRestockRecommendation(): int
+}
+
+class RegularProduct {
+  - markupPercentage: double
+  + RegularProduct(id: string, name: string, desc: string, price: double, cost: double, stock: int, cat: ProductCategory, supplier: string, markup: double, minStock: int, maxStock: int)
+  + calculateSellingPrice(): double
+  + getProductType(): string
+}
+
+class PerishableProduct {
+  - expirationDate: string
+  - shelfLifeDays: int
+  - discountRate: double
+  + PerishableProduct(id: string, name: string, desc: string, price: double, cost: double, stock: int, cat: ProductCategory, expDate: string, shelfLife: int, supplier: string, discount: double, minStock: int, maxStock: int)
+  + calculateSellingPrice(): double
+  + getProductType(): string
+  + isNearExpiration(): bool
+}
+
+class BulkProduct {
+  - unit: string
+  - pricePerUnit: double
+  - minimumQuantity: double
+  + BulkProduct(id: string, name: string, desc: string, pricePerUnit: double, cost: double, stock: int, cat: ProductCategory, unit: string, minQty: double, supplier: string, minStock: int, maxStock: int)
+  + calculateSellingPrice(): double
+  + calculatePriceForQuantity(quantity: double): double
+  + getProductType(): string
+}
+
+Product <|-- RegularProduct
+Product <|-- PerishableProduct
+Product <|-- BulkProduct
+Product --> ProductCategory
+
+show Product fields
+show Product methods
+show RegularProduct methods
+show PerishableProduct methods
+show BulkProduct methods
+@enduml
+
+@startuml
+!theme plain
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam wrapWidth 200
+hide empty members
+hide fields
+hide methods
+title CSMS - Customers
+
+enum CustomerType {
+  REGULAR
+  PREMIUM
+  VIP
+  EMPLOYEE
+}
+
+class Customer {
+  - customerId: string
+  - firstName: string
+  - lastName: string
+  - email: string
+  - phone: string
+  - type: CustomerType
+  - totalSpent: double
+  - transactionCount: int
+  - loyaltyPoints: double
+  - membershipDate: string
+  - isActive: bool
+  + Customer(id: string, fName: string, lName: string, email: string, phone: string, type: CustomerType)
+  + getId(): string
+  + getFullName(): string
+  + getEmail(): string
+  + getType(): CustomerType
+  + addPurchase(amount: double): void
+  + getDiscountRate(): double
+  + addLoyaltyPoints(points: double): void
+  + redeemLoyaltyPoints(points: double): bool
+}
+
+class CustomerDatabase {
+  - customers: map<string, Customer*>
+  - nextCustomerId: int
+  + ~CustomerDatabase()
+  + addCustomer(firstName: string, lastName: string, email: string, phone: string, type: CustomerType): Customer*
+  + findCustomer(customerId: string): Customer*
+  + findCustomerByEmail(email: string): Customer*
+  + getTopCustomers(count: int): vector<Customer*>
+  + getTotalCustomerCount(): int
+  + getTotalCustomerSpending(): double
+}
+
+Customer --> CustomerType
+CustomerDatabase "1" o-- "0..*" Customer
+
+show Customer fields
+show Customer methods
+show CustomerDatabase methods
+@enduml
+
+@startuml
+!theme plain
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam wrapWidth 220
+hide empty members
+hide fields
+hide methods
+title CSMS - Transactions
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  MOBILE_PAYMENT
+  LOYALTY_POINTS
+  GIFT_CARD
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+class TransactionItem {
+  + product: Product*
+  + quantity: double
+  + unitPrice: double
+  + discount: double
+  + subtotal: double
+  + notes: string
+  + TransactionItem(prod: Product*, qty: double, discount: double, notes: string)
+  + calculateSubtotal(): void
+  + displayItem(): void
+}
+
+class Transaction {
+  - nextTransactionId: int
+  - transactionId: int
+  - items: vector<TransactionItem>
+  - customer: Customer*
+  - subtotal: double
+  - tax: double
+  - totalDiscount: double
+  - loyaltyPointsUsed: double
+  - loyaltyPointsEarned: double
+  - finalTotal: double
+  - paymentMethod: PaymentMethod
+  - status: TransactionStatus
+  - timestamp: time_t
+  - cashierId: string
+  - notes: string
+  + Transaction(customer: Customer*, cashierId: string)
+  + addItem(product: Product*, quantity: double, discount: double, notes: string): bool
+  + removeItem(itemIndex: int): bool
+  + clearItems(): void
+  + calculateTotals(taxRate: double): void
+  + processPayment(method: PaymentMethod, amountPaid: double): bool
+  + applyLoyaltyPoints(points: double): bool
+  + finalizeTransaction(): void
+  + printReceipt(): void
+  + processRefund(amount: double): bool
+  + processPartialRefund(itemIndex: int, refundAmount: double): bool
+}
+
+Transaction "1" *-- "1..*" TransactionItem
+TransactionItem "1" --> "1" Product
+Transaction "1" --> "0..1" Customer
+Transaction --> PaymentMethod
+Transaction --> TransactionStatus
+
+show Transaction methods
+show TransactionItem methods
+@enduml
+
+@startuml
+!theme plain
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam wrapWidth 220
+hide empty members
+hide fields
+hide methods
+title CSMS - Application & Integrations
+
+enum ProductCategory {
+  BEVERAGES
+  SNACKS
+  DAIRY
+  BAKERY
+  HOUSEHOLD
+  ELECTRONICS
+  HEALTH_BEAUTY
+  OTHER
+}
+
+enum CustomerType {
+  REGULAR
+  PREMIUM
+  VIP
+  EMPLOYEE
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  MOBILE_PAYMENT
+  LOYALTY_POINTS
+  GIFT_CARD
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+abstract class Product
+class RegularProduct
+class PerishableProduct
+class BulkProduct
+
+class Customer
+class CustomerDatabase {
+  + addCustomer(...): Customer*
+  + findCustomer(...): Customer*
+}
+
+class TransactionItem
+class Transaction {
+  + addItem(...): bool
+  + finalizeTransaction(): void
+  + processPayment(...): bool
+}
+
+class InventoryManager {
+  - products: map<string, Product*>
+  - productsByCategory: map<ProductCategory, vector<Product*>>
+  - productsBySupplier: map<string, vector<Product*>>
+  + ~InventoryManager()
+  + addProduct(product: Product*): bool
+  + removeProduct(productId: string): bool
+  + findProduct(productId: string): Product*
+  + getLowStockProducts(): vector<Product*>
+  + getTotalInventoryValue(): double
+  + generateInventoryReport(): void
+  + updateAllPrices(percentageChange: double): void
+  - updateCategoryMapping(product: Product*): void
+  - updateSupplierMapping(product: Product*): void
+}
+
+class ConvenienceStoreApp {
+  - inventory: InventoryManager
+  - customerDB: CustomerDatabase
+  - transactions: vector<Transaction*>
+  - currentCashierId: string
+  + ConvenienceStoreApp()
+  + ~ConvenienceStoreApp()
+  + run(): void
+  - initializeTestData(): void
+  - displayMainMenu(): void
+  - handleInventoryMenu(): void
+  - handleCustomerMenu(): void
+  - handleSalesMenu(): void
+  - handleReportsMenu(): void
+  - processNewTransaction(): void
+  - viewTransactionHistory(): void
+}
+
+Product <|-- RegularProduct
+Product <|-- PerishableProduct
+Product <|-- BulkProduct
+CustomerDatabase "1" o-- "0..*" Customer
+Transaction "1" *-- "1..*" TransactionItem
+TransactionItem "1" --> "1" Product
+Transaction "1" --> "0..1" Customer
+Transaction --> PaymentMethod
+Transaction --> TransactionStatus
+InventoryManager "1" o-- "0..*" Product
+InventoryManager --> ProductCategory
+ConvenienceStoreApp "1" *-- "1" InventoryManager
+ConvenienceStoreApp "1" *-- "1" CustomerDatabase
+ConvenienceStoreApp "1" o-- "0..*" Transaction
+
+show InventoryManager methods
+show ConvenienceStoreApp methods
+@enduml

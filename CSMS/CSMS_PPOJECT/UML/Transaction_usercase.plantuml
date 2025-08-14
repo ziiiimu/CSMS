@@ -1,0 +1,34 @@
+@startuml
+scale 0.8
+!theme plain
+title CSMS - Use Case Diagram (Transaction Processing)
+
+actor "Cashier" as cashier
+actor "Customer" as customer
+
+rectangle "Transaction Processing" {
+    usecase "Process Sale Transaction" as UC018
+    usecase "Apply Discounts" as UC019
+    usecase "Process Payment" as UC020
+    usecase "Print Receipt" as UC021
+    usecase "Process Refund" as UC022
+    usecase "Handle Loyalty Points Redemption" as UC023
+    usecase "View Transaction History" as UC024
+}
+
+cashier --> UC018
+cashier --> UC019
+cashier --> UC020
+cashier --> UC021
+cashier --> UC022
+cashier --> UC023
+cashier --> UC024
+
+customer ..> UC018
+customer ..> UC014 : earns/redeems
+
+UC018 ..> UC019 : <<extend>>
+UC018 ..> UC023 : <<extend>>
+UC020 ..> UC021 : <<include>>
+UC022 ..> UC005 : <<include>>   ' Inventory update
+@enduml

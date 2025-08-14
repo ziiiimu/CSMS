@@ -1,0 +1,391 @@
+@startuml
+scale 0.6
+!theme plain
+title Convenience Store Management System - Class Diagram
+
+' Define enumerations first
+enum ProductCategory {
+    BEVERAGES
+    SNACKS
+    DAIRY
+    BAKERY
+    HOUSEHOLD
+    ELECTRONICS
+    HEALTH_BEAUTY
+    OTHER
+}
+
+enum CustomerType {
+    REGULAR
+    PREMIUM
+    VIP
+    EMPLOYEE
+}
+
+enum PaymentMethod {
+    CASH
+    CREDIT_CARD
+    DEBIT_CARD
+    MOBILE_PAYMENT
+    LOYALTY_POINTS
+    GIFT_CARD
+}
+
+enum TransactionStatus {
+    PENDING
+    COMPLETED
+    CANCELLED
+    REFUNDED
+    PARTIALLY_REFUNDED
+}
+
+' Abstract Product base class
+abstract class Product {
+    - productId: string
+    - name: string
+    - description: string
+    - basePrice: double
+    - currentStock: int
+    - minStockLevel: int
+    - maxStockLevel: int
+    - category: ProductCategory
+    - supplier: string
+    - barcode: string
+    - costPrice: double
+    - isActive: bool
+    - tags: vector<string>
+    
+    + Product(id: string, name: string, desc: string, price: double, cost: double, stock: int, cat: ProductCategory, supplier: string, minStock: int, maxStock: int)
+    + {abstract} calculateSellingPrice(): double
+    + {abstract} getProductType(): string
+    + virtual displayDetailedInfo(): void
+    
+    + getId(): string
+    + getName(): string
+    + getDescription(): string
+    + getBasePrice(): double
+    + getCostPrice(): double
+    + getCurrentStock(): int
+    + getMinStockLevel(): int
+    + getMaxStockLevel(): int
+    + getCategory(): ProductCategory
+    + getSupplier(): string
+    + getBarcode(): string
+    + getIsActive(): bool
+    + getTags(): vector<string>
+    
+    + setBasePrice(price: double): void
+    + setCostPrice(cost: double): void
+    + setMinStockLevel(minStock: int): void
+    + setMaxStockLevel(maxStock: int): void
+    + setIsActive(active: bool): void
+    + setDescription(desc: string): void
+    
+    + reduceStock(quantity: int): bool
+    + addStock(quantity: int): void
+    + isLowStock(): bool
+    + isOverstocked(): bool
+    + getRestockRecommendation(): int
+    
+    + calculateProfitMargin(): double
+    + getTotalInventoryValue(): double
+    + getTotalInventoryCost(): double
+    
+    + addTag(tag: string): void
+    + removeTag(tag: string): void
+    + hasTag(tag: string): bool
+    
+    + categoryToString(): string
+    + {static} stringToCategory(categoryStr: string): ProductCategory
+}
+
+' Concrete Product classes
+class RegularProduct {
+    - markupPercentage: double
+    
+    + RegularProduct(id: string, name: string, desc: string, price: double, cost: double, stock: int, cat: ProductCategory, supplier: string, markup: double, minStock: int, maxStock: int)
+    + calculateSellingPrice(): double
+    + getProductType(): string
+    + getMarkupPercentage(): double
+    + setMarkupPercentage(markup: double): void
+}
+
+class PerishableProduct {
+    - expirationDate: string
+    - shelfLifeDays: int
+    - discountRate: double
+    
+    + PerishableProduct(id: string, name: string, desc: string, price: double, cost: double, stock: int, cat: ProductCategory, expDate: string, shelfLife: int, supplier: string, discount: double, minStock: int, maxStock: int)
+    + calculateSellingPrice(): double
+    + getProductType(): string
+    + displayDetailedInfo(): void
+    + isNearExpiration(): bool
+    + getDaysUntilExpiration(): int
+    + getExpirationDate(): string
+    + getShelfLifeDays(): int
+    + getDiscountRate(): double
+    + setExpirationDate(date: string): void
+    + setDiscountRate(rate: double): void
+}
+
+class BulkProduct {
+    - unit: string
+    - pricePerUnit: double
+    - minimumQuantity: double
+    
+    + BulkProduct(id: string, name: string, desc: string, pricePerUnit: double, cost: double, stock: int, cat: ProductCategory, unit: string, minQty: double, supplier: string, minStock: int, maxStock: int)
+    + calculateSellingPrice(): double
+    + calculatePriceForQuantity(quantity: double): double
+    + getProductType(): string
+    + displayDetailedInfo(): void
+    + getUnit(): string
+    + getPricePerUnit(): double
+    + getMinimumQuantity(): double
+    + setPricePerUnit(price: double): void
+    + setMinimumQuantity(minQty: double): void
+}
+
+' Customer class
+class Customer {
+    - customerId: string
+    - firstName: string
+    - lastName: string
+    - email: string
+    - phone: string
+    - type: CustomerType
+    - totalSpent: double
+    - transactionCount: int
+    - loyaltyPoints: double
+    - membershipDate: string
+    - isActive: bool
+    
+    + Customer(id: string, fName: string, lName: string, email: string, phone: string, type: CustomerType)
+    
+    + getId(): string
+    + getFirstName(): string
+    + getLastName(): string
+    + getFullName(): string
+    + getEmail(): string
+    + getPhone(): string
+    + getType(): CustomerType
+    + getTotalSpent(): double
+    + getTransactionCount(): int
+    + getLoyaltyPoints(): double
+    + getMembershipDate(): string
+    + getIsActive(): bool
+    
+    + setEmail(email: string): void
+    + setPhone(phone: string): void
+    + setType(type: CustomerType): void
+    + setIsActive(active: bool): void
+    
+    + addPurchase(amount: double): void
+    + getDiscountRate(): double
+    + addLoyaltyPoints(points: double): void
+    + redeemLoyaltyPoints(points: double): bool
+    + getTypeString(): string
+    + displayInfo(): void
+    + isEligibleForUpgrade(): bool
+}
+
+' CustomerDatabase class
+class CustomerDatabase {
+    - customers: map<string, Customer*>
+    - {static} nextCustomerId: int
+    
+    + ~CustomerDatabase()
+    + addCustomer(firstName: string, lastName: string, email: string, phone: string, type: CustomerType): Customer*
+    + findCustomer(customerId: string): Customer*
+    + findCustomerByEmail(email: string): Customer*
+    + findCustomerByPhone(phone: string): Customer*
+    + getCustomersByType(type: CustomerType): vector<Customer*>
+    + getTopCustomers(count: int): vector<Customer*>
+    + displayAllCustomers(): void
+    + displayCustomerStatistics(): void
+    + getTotalCustomerCount(): int
+    + getTotalCustomerSpending(): double
+}
+
+' TransactionItem class
+class TransactionItem {
+    + product: Product*
+    + quantity: double
+    + unitPrice: double
+    + discount: double
+    + subtotal: double
+    + notes: string
+    
+    + TransactionItem(prod: Product*, qty: double, discount: double, notes: string)
+    + calculateSubtotal(): void
+    + displayItem(): void
+}
+
+' Transaction class
+class Transaction {
+    - {static} nextTransactionId: int
+    - transactionId: int
+    - items: vector<TransactionItem>
+    - customer: Customer*
+    - subtotal: double
+    - tax: double
+    - totalDiscount: double
+    - loyaltyPointsUsed: double
+    - loyaltyPointsEarned: double
+    - finalTotal: double
+    - paymentMethod: PaymentMethod
+    - status: TransactionStatus
+    - timestamp: time_t
+    - cashierId: string
+    - notes: string
+    
+    + Transaction(customer: Customer*, cashierId: string)
+    
+    + addItem(product: Product*, quantity: double, discount: double, notes: string): bool
+    + removeItem(itemIndex: int): bool
+    + clearItems(): void
+    + calculateTotals(taxRate: double): void
+    + processPayment(method: PaymentMethod, amountPaid: double): bool
+    + applyLoyaltyPoints(points: double): bool
+    + finalizeTransaction(): void
+    
+    + getId(): int
+    + getItems(): vector<TransactionItem>
+    + getCustomer(): Customer*
+    + getSubtotal(): double
+    + getTax(): double
+    + getTotalDiscount(): double
+    + getFinalTotal(): double
+    + getPaymentMethod(): PaymentMethod
+    + getStatus(): TransactionStatus
+    + getTimestamp(): time_t
+    + getCashierId(): string
+    + getLoyaltyPointsUsed(): double
+    + getLoyaltyPointsEarned(): double
+    
+    + setCustomer(customer: Customer*): void
+    + setCashierId(id: string): void
+    + setNotes(notes: string): void
+    
+    + printReceipt(): void
+    + printDetailedReceipt(): void
+    + getPaymentMethodString(): string
+    + getStatusString(): string
+    + processRefund(amount: double): bool
+    + processPartialRefund(itemIndex: int, refundAmount: double): bool
+}
+
+' InventoryManager class
+class InventoryManager {
+    - products: map<string, Product*>
+    - productsByCategory: map<ProductCategory, vector<Product*>>
+    - productsBySupplier: map<string, vector<Product*>>
+    
+    + ~InventoryManager()
+    
+    + addProduct(product: Product*): bool
+    + removeProduct(productId: string): bool
+    + findProduct(productId: string): Product*
+    + findProductsByName(name: string): vector<Product*>
+    + findProductsByTag(tag: string): vector<Product*>
+    
+    + getProductsByCategory(category: ProductCategory): vector<Product*>
+    + getProductsBySupplier(supplier: string): vector<Product*>
+    + getAllSuppliers(): vector<string>
+    
+    + getLowStockProducts(): vector<Product*>
+    + getOverstockedProducts(): vector<Product*>
+    + getOutOfStockProducts(): vector<Product*>
+    
+    + getTotalInventoryValue(): double
+    + getTotalInventoryCost(): double
+    + getTotalPotentialProfit(): double
+    + getCategoryValue(category: ProductCategory): double
+    
+    + generateInventoryReport(): void
+    + generateLowStockReport(): void
+    + generateCategoryReport(): void
+    + generateSupplierReport(): void
+    + generateProfitabilityReport(): void
+    
+    + updateAllPrices(percentageChange: double): void
+    + updateCategoryPrices(category: ProductCategory, percentageChange: double): void
+    + deactivateExpiredProducts(): void
+    
+    + displayAllProducts(): void
+    + displayProductsByCategory(category: ProductCategory): void
+    + displayLowStockAlert(): void
+    
+    + getTotalProductCount(): int
+    + getActiveProductCount(): int
+    + searchProducts(searchTerm: string): vector<Product*>
+    
+    - updateCategoryMapping(product: Product*): void
+    - updateSupplierMapping(product: Product*): void
+    - removeCategoryMapping(product: Product*): void
+    - removeSupplierMapping(product: Product*): void
+}
+
+' ConvenienceStoreApp - Main Application Class
+class ConvenienceStoreApp {
+    - inventory: InventoryManager
+    - customerDB: CustomerDatabase
+    - transactions: vector<Transaction*>
+    - currentCashierId: string
+    
+    + ConvenienceStoreApp()
+    + ~ConvenienceStoreApp()
+    + run(): void
+    
+    - initializeTestData(): void
+    - displayMainMenu(): void
+    - handleInventoryMenu(): void
+    - handleCustomerMenu(): void
+    - handleSalesMenu(): void
+    - handleReportsMenu(): void
+    - handleSettingsMenu(): void
+    
+    - addNewProduct(): void
+    - searchProducts(): void
+    - updateStock(): void
+    - addNewCustomer(): void
+    - searchCustomer(): void
+    - viewCustomerDetails(): void
+    - processNewTransaction(): void
+    - viewTransactionHistory(): void
+    - processRefund(): void
+    - viewTransactionDetails(): void
+    
+    - generateSalesReport(): void
+    - generateCustomerAnalytics(): void
+    - generateFinancialSummary(): void
+    - changeCashierId(): void
+    - showSystemInfo(): void
+    - handleDataManagement(): void
+}
+
+' Define relationships
+Product <|-- RegularProduct : extends
+Product <|-- PerishableProduct : extends
+Product <|-- BulkProduct : extends
+
+Product --> ProductCategory : uses
+
+Customer --> CustomerType : uses
+
+CustomerDatabase "1" o-- "0..*" Customer : manages
+
+Transaction "1" *-- "1..*" TransactionItem : contains
+TransactionItem "1" --> "1" Product : references
+Transaction "1" --> "0..1" Customer : involves
+Transaction --> PaymentMethod : uses
+Transaction --> TransactionStatus : has
+
+InventoryManager "1" o-- "0..*" Product : manages
+InventoryManager --> ProductCategory : categorizes by
+
+ConvenienceStoreApp "1" *-- "1" InventoryManager : uses
+ConvenienceStoreApp "1" *-- "1" CustomerDatabase : uses
+ConvenienceStoreApp "1" o-- "0..*" Transaction : processes
+
+@enduml
+

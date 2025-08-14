@@ -1,0 +1,21 @@
+@startuml
+scale 0.8
+!theme plain
+title CSMS - Use Case Diagram (System Administration)
+
+actor "System Administrator" as admin
+
+rectangle "System Administration" {
+    usecase "Configure System Settings" as UC031
+    usecase "Manage User Accounts" as UC032
+    usecase "Backup System Data" as UC033
+    usecase "System Maintenance" as UC034
+    usecase "Set Tax Rates" as UC035
+}
+
+admin --> UC031
+admin --> UC032
+admin --> UC033
+admin --> UC034
+admin --> UC035
+@enduml

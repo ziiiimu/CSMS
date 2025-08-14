@@ -1,0 +1,138 @@
+@startuml
+scale 0.5
+!theme plain
+title Convenience Store Management System - Use Case Diagram
+
+' Define actors
+actor "Cashier" as cashier
+actor "Store Manager" as manager
+actor "Customer" as customer
+actor "System Administrator" as admin
+
+' Define system boundary
+rectangle "Convenience Store Management System" {
+    
+    ' Inventory Management Use Cases
+    package "Inventory Management" {
+        usecase "Add New Product" as UC001
+        usecase "Update Product Information" as UC002
+        usecase "Remove Product" as UC003
+        usecase "Search Products" as UC004
+        usecase "Update Stock Levels" as UC005
+        usecase "Generate Low Stock Alert" as UC006
+        usecase "View Inventory Report" as UC007
+        usecase "Bulk Price Update" as UC008
+        usecase "Manage Product Categories" as UC009
+        usecase "Track Expiration Dates" as UC010
+    }
+    
+    ' Customer Management Use Cases
+    package "Customer Management" {
+        usecase "Register New Customer" as UC011
+        usecase "Update Customer Information" as UC012
+        usecase "Search Customer Records" as UC013
+        usecase "Manage Loyalty Points" as UC014
+        usecase "Upgrade Customer Membership" as UC015
+        usecase "View Customer Analytics" as UC016
+        usecase "Generate Customer Reports" as UC017
+    }
+    
+    ' Transaction Processing Use Cases
+    package "Transaction Processing" {
+        usecase "Process Sale Transaction" as UC018
+        usecase "Apply Discounts" as UC019
+        usecase "Process Payment" as UC020
+        usecase "Print Receipt" as UC021
+        usecase "Process Refund" as UC022
+        usecase "Handle Loyalty Points Redemption" as UC023
+        usecase "View Transaction History" as UC024
+    }
+    
+    ' Reporting & Analytics Use Cases
+    package "Reporting & Analytics" {
+        usecase "Generate Sales Report" as UC025
+        usecase "Generate Financial Summary" as UC026
+        usecase "Generate Inventory Valuation Report" as UC027
+        usecase "Analyze Customer Behavior" as UC028
+        usecase "Track Profit Margins" as UC029
+        usecase "Monitor Stock Movement" as UC030
+    }
+    
+    ' System Administration Use Cases
+    package "System Administration" {
+        usecase "Configure System Settings" as UC031
+        usecase "Manage User Accounts" as UC032
+        usecase "Backup System Data" as UC033
+        usecase "System Maintenance" as UC034
+        usecase "Set Tax Rates" as UC035
+    }
+}
+
+' Actor-Use Case Relationships
+
+' Cashier relationships
+cashier --> UC018 : performs
+cashier --> UC019 : applies
+cashier --> UC020 : processes
+cashier --> UC021 : generates
+cashier --> UC022 : handles
+cashier --> UC023 : processes
+cashier --> UC024 : views
+cashier --> UC004 : searches
+cashier --> UC005 : updates
+cashier --> UC011 : registers
+cashier --> UC012 : updates
+cashier --> UC013 : searches
+
+' Store Manager relationships
+manager --> UC001 : adds
+manager --> UC002 : updates
+manager --> UC003 : removes
+manager --> UC004 : searches
+manager --> UC005 : manages
+manager --> UC006 : monitors
+manager --> UC007 : reviews
+manager --> UC008 : performs
+manager --> UC009 : manages
+manager --> UC010 : monitors
+manager --> UC011 : manages
+manager --> UC012 : updates
+manager --> UC013 : searches
+manager --> UC014 : manages
+manager --> UC015 : approves
+manager --> UC016 : analyzes
+manager --> UC017 : generates
+manager --> UC025 : generates
+manager --> UC026 : reviews
+manager --> UC027 : generates
+manager --> UC028 : analyzes
+manager --> UC029 : monitors
+manager --> UC030 : tracks
+
+' System Administrator relationships
+admin --> UC031 : configures
+admin --> UC032 : manages
+admin --> UC033 : performs
+admin --> UC034 : conducts
+admin --> UC035 : sets
+
+' Customer relationships (indirect through cashier)
+customer ..> UC018 : participates in
+customer ..> UC014 : earns/redeems
+
+' Use Case Dependencies and Extensions
+UC018 ..> UC019 : <<extend>>
+UC018 ..> UC023 : <<extend>>
+UC020 ..> UC021 : <<include>>
+UC022 ..> UC005 : <<include>>
+UC006 ..> UC007 : <<include>>
+UC015 ..> UC014 : <<include>>
+UC025 ..> UC024 : <<include>>
+UC026 ..> UC025 : <<include>>
+UC027 ..> UC007 : <<include>>
+
+' Generalization relationships
+UC019 --|> UC018 : <<extend>>
+UC023 --|> UC018 : <<extend>>
+
+@enduml

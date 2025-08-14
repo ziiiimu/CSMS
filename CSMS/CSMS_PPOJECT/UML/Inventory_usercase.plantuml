@@ -1,0 +1,37 @@
+@startuml
+scale 0.8
+!theme plain
+title CSMS - Use Case Diagram (Inventory Management)
+
+actor "Store Manager" as manager
+actor "Cashier" as cashier
+
+rectangle "Inventory Management" {
+    usecase "Add New Product" as UC001
+    usecase "Update Product Information" as UC002
+    usecase "Remove Product" as UC003
+    usecase "Search Products" as UC004
+    usecase "Update Stock Levels" as UC005
+    usecase "Generate Low Stock Alert" as UC006
+    usecase "View Inventory Report" as UC007
+    usecase "Bulk Price Update" as UC008
+    usecase "Manage Product Categories" as UC009
+    usecase "Track Expiration Dates" as UC010
+}
+
+cashier --> UC004
+cashier --> UC005
+
+manager --> UC001
+manager --> UC002
+manager --> UC003
+manager --> UC004
+manager --> UC005
+manager --> UC006
+manager --> UC007
+manager --> UC008
+manager --> UC009
+manager --> UC010
+
+UC006 ..> UC007 : <<include>>
+@enduml

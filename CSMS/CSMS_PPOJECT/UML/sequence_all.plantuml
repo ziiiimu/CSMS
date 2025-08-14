@@ -1,0 +1,444 @@
+@startuml ProcessSaleTransaction
+!theme plain
+title Sequence Diagram: Process Sale Transaction
+
+actor Cashier
+participant ":ConvenienceStoreApp" as App
+participant ":InventoryManager" as Inventory
+participant ":CustomerDatabase" as CustomerDB
+participant ":Customer" as Customer
+participant ":Transaction" as Transaction
+participant ":Product" as Product
+participant ":TransactionItem" as TItem
+
+== Customer Identification ==
+Cashier -> App: processNewTransaction()
+activate App
+
+App -> App: displayMenu("Is this for registered customer?")
+Cashier -> App: provideCustomerId("C1001")
+
+App -> CustomerDB: findCustomer("C1001")
+activate CustomerDB
+CustomerDB -> Customer: validate customer
+activate Customer
+Customer --> CustomerDB: customerData
+deactivate Customer
+CustomerDB --> App: Customer*
+deactivate CustomerDB
+
+App -> Transaction: new Transaction(customer, cashierId)
+activate Transaction
+Transaction --> App: transaction created
+note right: Transaction ID generated\nTimestamp recorded
+
+== Add Items to Transaction ==
+loop For each product item
+    Cashier -> App: addItemToTransaction(productId, quantity)
+    
+    App -> Inventory: findProduct(productId)
+    activate Inventory
+    Inventory --> App: Product*
+    deactivate Inventory
+    
+    alt Product found and active
+        App -> Product: getIsActive()
+        activate Product
+        Product --> App: true
+        
+        App -> Product: getCurrentStock()
+        Product --> App: stockLevel
+        deactivate Product
+        
+        alt Sufficient stock
+            App -> Transaction: addItem(product, quantity, discount)
+            Transaction -> TItem: new TransactionItem(product, quantity, discount)
+            activate TItem
+            TItem -> Product: calculateSellingPrice()
+            activate Product
+            Product --> TItem: price
+            deactivate Product
+            TItem -> TItem: calculateSubtotal()
+            TItem --> Transaction: item created
+            deactivate TItem
+            Transaction --> App: item added successfully
+            
+            App --> Cashier: "Item added successfully"
+        else Insufficient stock
+            App --> Cashier: "Insufficient stock error"
+        end
+    else Product not found
+        App --> Cashier: "Product not found error"
+    end
+end
+
+== Apply Loyalty Points ==
+alt Customer has loyalty points
+    App -> Customer: getLoyaltyPoints()
+    activate Customer
+    Customer --> App: availablePoints
+    deactivate Customer
+    
+    alt Customer wants to use points
+        Cashier -> App: useLoyaltyPoints(pointsToUse)
+        App -> Transaction: applyLoyaltyPoints(pointsToUse)
+        Transaction --> App: points applied
+    end
+end
+
+== Calculate Totals ==
+App -> Transaction: calculateTotals(taxRate)
+Transaction -> Transaction: calculateSubtotal()
+Transaction -> Customer: getDiscountRate()
+activate Customer
+Customer --> Transaction: discountRate
+deactivate Customer
+Transaction -> Transaction: applyCustomerDiscount()
+Transaction -> Transaction: calculateTax()
+Transaction -> Transaction: calculateFinalTotal()
+Transaction --> App: totals calculated
+
+== Process Payment ==
+App -> App: displayTransactionSummary()
+Cashier -> App: selectPaymentMethod(CREDIT_CARD)
+
+App -> Transaction: processPayment(CREDIT_CARD, finalTotal)
+Transaction -> Transaction: validatePayment()
+Transaction --> App: payment successful
+
+== Finalize Transaction ==
+App -> Transaction: finalizeTransaction()
+Transaction -> Transaction: updateInventoryStock()
+
+loop For each transaction item
+    Transaction -> Product: reduceStock(quantity)
+    activate Product
+    Product -> Product: updateCurrentStock()
+    Product --> Transaction: stock updated
+    deactivate Product
+end
+
+Transaction -> Customer: addPurchase(finalTotal)
+activate Customer
+Customer -> Customer: updateTotalSpent()
+Customer -> Customer: incrementTransactionCount()
+Customer --> Transaction: purchase recorded
+deactivate Customer
+
+alt Loyalty points earned
+    Transaction -> Customer: addLoyaltyPoints(earnedPoints)
+    Customer -> Customer: updateLoyaltyPoints()
+    Customer --> Transaction: points added
+    deactivate Customer
+end
+
+Transaction -> Transaction: setStatus(COMPLETED)
+Transaction --> App: transaction finalized
+
+== Generate Receipt ==
+App -> Transaction: printReceipt()
+Transaction -> Transaction: formatReceiptData()
+Transaction -> App: displayReceipt()
+deactivate Transaction
+
+App --> Cashier: "Transaction completed successfully"
+deactivate App
+
+@enduml
+
+@startuml AddNewProduct
+!theme plain
+title Sequence Diagram: Add New Product to Inventory
+
+actor "Store Manager" as Manager
+participant ":ConvenienceStoreApp" as App
+participant ":InventoryManager" as Inventory
+participant ":RegularProduct" as RegProduct
+participant ":PerishableProduct" as PerishProduct
+participant ":BulkProduct" as BulkProduct
+
+== Product Information Input ==
+Manager -> App: addNewProduct()
+activate App
+
+App -> App: displayProductForm()
+Manager -> App: enterProductDetails(id, name, desc, price, cost, category, type)
+
+App -> App: validateProductData()
+
+alt Product ID already exists
+    App -> Inventory: findProduct(productId)
+    activate Inventory
+    Inventory --> App: existing product found
+    deactivate Inventory
+    App --> Manager: "Product ID already exists error"
+    
+else Product ID is unique
+    App -> App: determineProductType(type)
+    
+    alt Regular Product
+        App -> RegProduct: new RegularProduct(id, name, desc, price, cost, stock, category, supplier, markup)
+        activate RegProduct
+        RegProduct -> RegProduct: calculateSellingPrice()
+        RegProduct --> App: product created
+        deactivate RegProduct
+        
+    else Perishable Product
+        Manager -> App: enterExpirationData(expDate, shelfLife, discountRate)
+        App -> PerishProduct: new PerishableProduct(id, name, desc, price, cost, stock, category, expDate, shelfLife, supplier, discount)
+        activate PerishProduct
+        PerishProduct -> PerishProduct: calculateSellingPrice()
+        PerishProduct -> PerishProduct: checkExpirationStatus()
+        PerishProduct --> App: product created
+        deactivate PerishProduct
+        
+    else Bulk Product
+        Manager -> App: enterBulkData(unit, pricePerUnit, minQuantity)
+        App -> BulkProduct: new BulkProduct(id, name, desc, pricePerUnit, cost, stock, category, unit, minQty, supplier)
+        activate BulkProduct
+        BulkProduct -> BulkProduct: calculateSellingPrice()
+        BulkProduct --> App: product created
+        deactivate BulkProduct
+    end
+    
+    == Add to Inventory ==
+    App -> Inventory: addProduct(newProduct)
+    activate Inventory
+    Inventory -> Inventory: updateCategoryMapping(product)
+    Inventory -> Inventory: updateSupplierMapping(product)
+    Inventory --> App: product added successfully
+    deactivate Inventory
+    
+    App --> Manager: "Product added successfully"
+end
+
+deactivate App
+
+@enduml
+
+@startuml CustomerLoyaltyManagement
+!theme plain
+title Sequence Diagram: Customer Loyalty Points Management
+
+actor Cashier
+participant ":ConvenienceStoreApp" as App
+participant ":CustomerDatabase" as CustomerDB
+participant ":Customer" as Customer
+participant ":Transaction" as Transaction
+
+== Customer Purchase Processing ==
+Cashier -> App: processCustomerPurchase(customerId, purchaseAmount)
+activate App
+
+App -> CustomerDB: findCustomer(customerId)
+activate CustomerDB
+CustomerDB --> App: Customer*
+deactivate CustomerDB
+
+== Calculate Loyalty Points ==
+App -> Customer: getType()
+activate Customer
+Customer --> App: customerType
+deactivate Customer
+
+App -> App: calculateLoyaltyMultiplier(customerType)
+note right: Regular: 1x\nPremium: 1.5x\nVIP: 2x\nEmployee: 3x
+
+App -> Transaction: getFinalTotal()
+activate Transaction
+Transaction --> App: finalAmount
+deactivate Transaction
+
+App -> App: calculateEarnedPoints(finalAmount, multiplier)
+
+== Update Customer Record ==
+App -> Customer: addPurchase(purchaseAmount)
+activate Customer
+Customer -> Customer: updateTotalSpent(amount)
+Customer -> Customer: incrementTransactionCount()
+Customer --> App: purchase recorded
+
+App -> Customer: addLoyaltyPoints(earnedPoints)
+Customer -> Customer: updateLoyaltyBalance(points)
+Customer --> App: points added
+
+== Check for Membership Upgrade ==
+Customer -> Customer: isEligibleForUpgrade()
+Customer -> Customer: checkUpgradeThresholds()
+
+alt Eligible for upgrade
+    Customer --> App: upgrade eligibility detected
+    App -> Customer: upgradeCustomerType()
+    Customer -> Customer: setType(newType)
+    Customer --> App: membership upgraded
+    App --> Cashier: "Customer upgraded to Premium/VIP"
+else Not eligible
+    Customer --> App: no upgrade needed
+end
+
+deactivate Customer
+deactivate App
+
+@enduml
+
+@startuml InventoryLowStockAlert
+!theme plain
+title Sequence Diagram: Inventory Low Stock Alert System
+
+actor "Store Manager" as Manager
+participant ":ConvenienceStoreApp" as App
+participant ":InventoryManager" as Inventory
+participant ":Product" as Product
+collections "products" as ProductList
+
+== Generate Low Stock Report ==
+Manager -> App: generateLowStockReport()
+activate App
+
+App -> Inventory: generateLowStockReport()
+activate Inventory
+
+== Check All Products ==
+Inventory -> Inventory: getLowStockProducts()
+
+loop For each product in inventory
+    Inventory -> ProductList: getNextProduct()
+    activate ProductList
+    ProductList --> Inventory: Product*
+    deactivate ProductList
+    
+    Inventory -> Product: isLowStock()
+    activate Product
+    Product -> Product: getCurrentStock()
+    Product -> Product: getMinStockLevel()
+    Product -> Product: compareStockLevels()
+    
+    alt Stock <= Minimum Level
+        Product --> Inventory: true (low stock)
+        Inventory -> Product: getRestockRecommendation()
+        Product -> Product: calculateRestockQuantity()
+        Product --> Inventory: recommendedQuantity
+        
+        Inventory -> Inventory: addToLowStockList(product)
+    else Stock > Minimum Level
+        Product --> Inventory: false (adequate stock)
+    end
+    deactivate Product
+end
+
+== Check for Out of Stock ==
+Inventory -> Inventory: getOutOfStockProducts()
+
+loop For each product in inventory
+    Inventory -> Product: getCurrentStock()
+    activate Product
+    Product --> Inventory: stockLevel
+    deactivate Product
+    
+    alt Stock == 0
+        Inventory -> Inventory: addToOutOfStockList(product)
+    end
+end
+
+== Generate Alert Report ==
+Inventory -> Inventory: formatLowStockReport()
+Inventory -> Inventory: displayLowStockAlert()
+
+alt Critical alerts exist
+    Inventory --> App: critical stock alerts
+    App -> App: prioritizeAlerts()
+    App --> Manager: " CRITICAL: Out of stock items found"
+else Low stock alerts exist
+    Inventory --> App: low stock warnings
+    App --> Manager: " WARNING: Low stock items detected"
+else All stock adequate
+    Inventory --> App: no alerts
+    App --> Manager: " All products adequately stocked"
+end
+
+deactivate Inventory
+deactivate App
+
+@enduml
+
+@startuml ProcessRefund
+!theme plain
+title Sequence Diagram: Process Transaction Refund
+
+actor Cashier
+participant ":ConvenienceStoreApp" as App
+participant ":Transaction" as Transaction
+participant ":Customer" as Customer
+participant ":Product" as Product
+participant ":InventoryManager" as Inventory
+collections "transactionItems" as Items
+
+== Refund Initiation ==
+Cashier -> App: processRefund(transactionId)
+activate App
+
+App -> App: findTransaction(transactionId)
+
+alt Transaction found
+    App -> Transaction: getStatus()
+    activate Transaction
+    Transaction --> App: transactionStatus
+    
+    alt Status is COMPLETED
+        App -> Transaction: getCustomer()
+        Transaction --> App: Customer*
+        
+        App -> Transaction: getFinalTotal()
+        Transaction --> App: refundAmount
+        
+        Cashier -> App: selectRefundType(FULL_REFUND)
+        
+        == Process Full Refund ==
+        App -> Transaction: processRefund()
+        Transaction -> Transaction: getItems()
+        
+        == Restore Inventory ==
+        loop For each transaction item
+            Transaction -> Items: getNextItem()
+            activate Items
+            Items --> Transaction: TransactionItem
+            deactivate Items
+            
+            Transaction -> Product: addStock(quantity)
+            activate Product
+            Product -> Product: updateCurrentStock()
+            Product --> Transaction: stock restored
+            deactivate Product
+        end
+        
+        == Update Customer Records ==
+        alt Customer exists
+            Transaction -> Customer: addPurchase(-refundAmount)
+            activate Customer
+            Customer -> Customer: adjustTotalSpent(negativeAmount)
+            Customer -> Customer: adjustTransactionCount()
+            
+            Transaction -> Customer: redeemLoyaltyPoints(earnedPoints)
+            Customer -> Customer: deductLoyaltyPoints()
+            Customer --> Transaction: customer records updated
+            deactivate Customer
+        end
+        
+        == Update Transaction Status ==
+        Transaction -> Transaction: setStatus(REFUNDED)
+        Transaction --> App: refund processed successfully
+        deactivate Transaction
+        
+        App --> Cashier: " Refund completed successfully"
+        
+    else Status not COMPLETED
+        App --> Cashier: " Can only refund completed transactions"
+    end
+    
+else Transaction not found
+    App --> Cashier: " Transaction not found"
+end
+
+deactivate App
+
+@enduml

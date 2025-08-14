@@ -1,0 +1,35 @@
+@startuml
+scale 0.8
+!theme plain
+title CSMS - Use Case Diagram (Customer Management)
+
+actor "Store Manager" as manager
+actor "Cashier" as cashier
+actor "Customer" as customer
+
+rectangle "Customer Management" {
+    usecase "Register New Customer" as UC011
+    usecase "Update Customer Information" as UC012
+    usecase "Search Customer Records" as UC013
+    usecase "Manage Loyalty Points" as UC014
+    usecase "Upgrade Customer Membership" as UC015
+    usecase "View Customer Analytics" as UC016
+    usecase "Generate Customer Reports" as UC017
+}
+
+cashier --> UC011
+cashier --> UC012
+cashier --> UC013
+
+manager --> UC011
+manager --> UC012
+manager --> UC013
+manager --> UC014
+manager --> UC015
+manager --> UC016
+manager --> UC017
+
+customer ..> UC014 : earns/redeems
+
+UC015 ..> UC014 : <<include>>
+@enduml
